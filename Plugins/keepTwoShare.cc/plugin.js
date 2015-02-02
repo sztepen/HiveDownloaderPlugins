@@ -1,5 +1,4 @@
 var KeepTwoShareHost = function() {
-    //a
     var pluginApi = new PluginApi();
 
     var _this = this;
@@ -238,8 +237,12 @@ var KeepTwoShareHost = function() {
         }
 
     }
+
+
+    _this.prototype = new HostBase();
+    _this.prototype.constructor = KeepTwoShareHost;
+
 }
 
-KeepTwoShareHost.prototype = new HostBase();
-KeepTwoShareHost.prototype.constructor = KeepTwoShareHost;
+
 
