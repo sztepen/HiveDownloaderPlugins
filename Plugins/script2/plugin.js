@@ -5,8 +5,7 @@ var KeepTwoShareHost = function() {
     var testUrls = [
         'http://k2s.cc/file/52ca59dc518ca',
         'http://k2s.cc/file/f77498090903d' ,
-        'http://k2s.cc/file/52d22944795ba',
-        'http://k2s.cc/file/ce336be1d823b',
+   
 
 
         'http://k2s.cc/file/52dfb44aa22b3',  //not available file
