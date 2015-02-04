@@ -6,7 +6,7 @@ var KeepTwoShareHost = function() {
         'http://k2s.cc/file/52ca59dc518ca',
 
   
-        'http://k2s.cc/file/52dfb44aa22b3',  //not available file
+       // 'http://k2s.cc/file/52dfb44aa22b3',  //not available file
         'http://k2s.cc/file/a24f21fab126f' //too big file
     ]
 
