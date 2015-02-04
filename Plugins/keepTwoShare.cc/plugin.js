@@ -238,11 +238,10 @@ var KeepTwoShareHost = function() {
 
     }
 
-
-    _this.prototype = new HostBase();
-    _this.prototype.constructor = KeepTwoShareHost;
-
 }
 
+
+KeepTwoShareHost.prototype = new HostBase();
+KeepTwoShareHost.constructor = KeepTwoShareHost;
 
 
