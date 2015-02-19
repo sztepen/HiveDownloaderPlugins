@@ -20,21 +20,13 @@ var KeepTwoShareHost = function() {
     this.CAPTCHAERROR = "The verification code is incorrect";
     this.NOTAVAILABLE = "This file is no longer available";
     this.PREMIUMREQUIRED = "Free user can't download large files";
-
-    //Mandatory methods
-    this.onCaptchaSolutionInput = function (itemDto)
-    {
-        _this.SubmitCaptcha(itemDto);
-    }
-
+   
     //Starting point
-    this.DownloadWorkflow = function (itemDto) {
+    this.StartWorkflow = function (itemDto) {
 
         var item = {};
         item.guid = itemDto.guid;
         item.baseUrl = itemDto.baseUrl;
-
-
         _this.HandleWelcomeScreen(item);
     };
 
@@ -47,7 +39,6 @@ var KeepTwoShareHost = function() {
             function onSuccess(response) {
                 item.welcomeScreen = response;
                 var welcomeScreenString = $('body', item.welcomeScreen).html().toString();
-
                 var el = item.welcomeScreen;
 
                 //slow download
@@ -92,30 +83,34 @@ var KeepTwoShareHost = function() {
         //todo to bardziej obiektowo, mniej hardcode!
         var formData = formDataName + '=' + formDataValue;
 
-       pluginApi.Post(url, formData, function (response) {
+       pluginApi.Post(
+           url,
+           formData,
+           function onSuccess(response) {
 
-            var dom = response;
-            var responseString =  $('body', dom).html().toString();
+            var pageDom = response;
+            var pageString =  $('body', pageDom).html().toString();
 
-            //TODO zrobic ponizsze przy pomocy jakiegos case() czy cos
+            var url = item.baseUrl;
 
-            //looking for captcha
-            var captchaEl = $("#captcha-form", dom).find('img')
+            var captchaImageElement = $("#captcha-form", pageDom).find('img')
+            
             //ON CAPTCHA FOUND:
-            if (captchaEl.length != 0) {
-                var captchaScreen = response;
+            if (captchaImageElement.length != 0) {
 
-                item.CaptchaSubmitDetails = _this.GetCaptchaSubmitDetails(captchaScreen, item);
+                var captchaInputElement = $("#uniqueId", pageDom);
+                var uniqueId = captchaInputElement.attr('value');
 
-                _this.ExtractCaptcha(captchaScreen,item,
-                    function onCaptchaExtractionSuccess(){
-                        //TODO sprawic zeby nie otwieral nowego okna gdy juz otwarte if (from == 'HandleSlow')
-                        _this.SendItemDto(item);
-                        pluginApi.openCaptchaWindow(item);})
+                var onImageExtractionSuccess = function(solution)
+                {
+                    _this.SubmitCaptchaSolution(item,solution,uniqueId,url)
+                }
+
+                _this.ExtractCaptcha(pageDom,item,onImageExtractionSuccess)
             }
 
             //if download already available------------------------------------------------------------------------------
-            var buttonEl = $("#downloader-main", dom).find('button:contains("Download")')
+            var buttonEl = $("#downloader-main", pageDom).find('button:contains("Download")')
             if (buttonEl.length != 0) {
                 item.downloadScreen = response;
                 _this.HandleDownloadScreen(item);
@@ -124,19 +119,19 @@ var KeepTwoShareHost = function() {
 
             //if dling two files simultaneously--------------------------------------------------------------------------
             var errorString = "Free account does not allow to download more than one file at the same time";
-            if (responseString.indexOf(errorString) !== -1)
+            if (pageString.indexOf(errorString) !== -1)
             {
                 item.State = "OnlyOneFileError";
             }
 
             //if wait required--------------------------------------------------------------------------
-            if (responseString.search(/Please wait(.*)to download this file/) !== -1)
+            if (pageString.search(/Please wait(.*)to download this file/) !== -1)
             {
                 item.State = "WaitRequiredError";
             }
 
             //if premium required--------------------------------------------------------------------------
-            if (responseString.search(_this.PREMIUMREQUIRED) !== -1)
+            if (pageString.search(_this.PREMIUMREQUIRED) !== -1)
             {
                 item.State = "PremiumRequired";
             }
@@ -183,13 +178,13 @@ var KeepTwoShareHost = function() {
         }
     }
 
-    this.SubmitCaptcha = function (item) {
+    this.SubmitCaptchaSolution = function (item,solution,uniqueId,url) {
 
-        var formData = "CaptchaForm[code]=" + item.captchaSolution + "&free=1&freeDownloadRequest=1&uniqueId="
-            + item.CaptchaSubmitDetails.uniqueId;
+        var formData = "CaptchaForm[code]=" + solution + "&free=1&freeDownloadRequest=1&uniqueId="
+            + uniqueId;
 
         pluginApi.Post(
-            item.CaptchaSubmitDetails.url,
+            url,
             formData,
             function onPostSuccess(response){
                 _this.HandleCaptchaResponse(response,item)
@@ -214,34 +209,30 @@ var KeepTwoShareHost = function() {
         if (captchaEl.length != 0) {
 
             pluginApi.getBase64Image(captchaEl[0].src,
-                function onGotImage(result) {
-                    //todo return in a different way
-                    item.captchaByteArray = result;
-                    onSuccess()
-                });
+                function onGotImage(image) {
+
+                    _this.SendItemDto(item);
+                    pluginApi.openCaptchaWindow(item,image,
+
+                        function (solution){
+                            onSuccess(solution)
+                        }
+
+
+                    );
+                })
+
+        };
             return;
         }
-    }
-
-    this.GetCaptchaSubmitDetails = function(captchaScreen, item){
-
-        var dom = captchaScreen;
-        var captchaInputEl = $("#uniqueId", dom);
-        var uniqueId = captchaInputEl.attr('value');
-
-        var url = item.baseUrl;
-
-        return {
-            uniqueId: uniqueId,
-            url: url
-        }
 
     }
 
-}
+
 
 
 KeepTwoShareHost.prototype = new HostBase();
 KeepTwoShareHost.constructor = KeepTwoShareHost;
 
+//# sourceURL=dynamicScript.js
 
